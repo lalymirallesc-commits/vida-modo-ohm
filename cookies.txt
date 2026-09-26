@@ -1,0 +1,5 @@
+# HTTrack Website Copier Cookie File
+# This file format is compatible with Netscape cookies
+vidamodoohm.es	TRUE	/	FALSE	1999999999	__cf_bm	ndQzohF3NpLM8Wt5Vo8bKyLfXQyUM1.yhTs2nYFME3k-1789422504.4797113-1.0.1.1-lS55AH6FQfEHyCXZH4GO04M7uCD1oJzQ7R9P1IciM5BW85okoBDrKKHTjqyV5Crs110tIGq5id87hxjBiIGSEpZl4JA1kbjuGRfGUv6nNHS2OszF_u0r7em2IHy4PnS1
+vidamodoohm.es	TRUE	/	FALSE	1999999999	SameSite	None
+
