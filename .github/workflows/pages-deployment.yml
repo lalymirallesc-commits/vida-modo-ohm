@@ -1,0 +1,32 @@
+name: Publicar Vida Modo Ohm en Cloudflare
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'automation/**'
+      - '.github/workflows/pages-deployment.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar la web y las fotos
+        run: |
+          if ! command -v convert >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y imagemagick
+          fi
+          bash automation/prepare-site.sh dist
+      - name: Publicar en el proyecto actual
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=vida-modo-ohm-prueba --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
