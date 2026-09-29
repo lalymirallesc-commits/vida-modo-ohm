@@ -26,7 +26,8 @@ export default {
       const primaryLeads = await readLeads(env.INTERESADAS);
       const backupLeads = env.INTERESADAS_BACKUP ? await readLeads(env.INTERESADAS_BACKUP) : [];
       const leads = mergeLeads(primaryLeads, backupLeads);
-      return new Response(renderDashboard(leads, { primaryCount: primaryLeads.length, backupCount: backupLeads.length, backupConfigured: Boolean(env.INTERESADAS_BACKUP) }), { headers: PRIVATE_HEADERS });
+      const welcomeStatus = await env.INTERESADAS.get("welcome:last", "json");
+      return new Response(renderDashboard(leads, { primaryCount: primaryLeads.length, backupCount: backupLeads.length, backupConfigured: Boolean(env.INTERESADAS_BACKUP), welcomeStatus, resendConfigured: Boolean(env.RESEND_API_KEY) }), { headers: PRIVATE_HEADERS });
     }
 
     if (url.pathname === "/interesadas.csv") {
@@ -99,8 +100,10 @@ async function handleLead(request, env, url, ctx) {
   }
 
   if (env.RESEND_API_KEY && !welcomeSent) {
-    ctx.waitUntil(sendWelcomeEmail(env.RESEND_API_KEY, email, name).then(async (accepted) => {
-      if (accepted) await env.INTERESADAS.put(welcomeKey, new Date().toISOString());
+    ctx.waitUntil(sendWelcomeEmail(env.RESEND_API_KEY, email, name).then(async (result) => {
+      const at = new Date().toISOString();
+      await env.INTERESADAS.put("welcome:last", JSON.stringify({ at, ...result }));
+      if (result.accepted) await env.INTERESADAS.put(welcomeKey, at);
     }));
   } else if (!env.RESEND_API_KEY && !welcomeSent) {
     console.error("RESEND_API_KEY no está configurada; registro guardado sin correo de bienvenida");
@@ -158,12 +161,12 @@ https://vidamodoohm.es`;
     });
     if (!response.ok) {
       console.error("Correo de bienvenida rechazado por Resend", response.status, (await response.text()).slice(0, 500));
-      return false;
+      return { accepted: false, status: response.status, detail: "Resend rechazó la solicitud" };
     }
-    return true;
+    return { accepted: true, status: response.status, detail: "Resend aceptó el envío" };
   } catch (error) {
     console.error("No se pudo enviar el correo de bienvenida", error);
-    return false;
+    return { accepted: false, status: 0, detail: "No se pudo conectar con Resend" };
   }
 }
 
@@ -300,6 +303,7 @@ function renderDashboard(leads, storage = {}) {
       ${storage.backupConfigured
         ? `<div class="storage${storage.primaryCount === 0 && storage.backupCount > 0 ? " warn" : ""}"><strong>Estado del almacenamiento:</strong> principal ${storage.primaryCount ?? 0} · copia ${storage.backupCount ?? 0}${storage.primaryCount === 0 && storage.backupCount > 0 ? " · Atención: la principal está vacía; se muestran los datos recuperados de la copia." : ""}</div>`
         : `<div class="storage warn"><strong>Copia de seguridad no conectada.</strong> La lista funciona, pero conviene añadir una segunda KV como INTERESADAS_BACKUP para tener redundancia.</div>`}
+      <div class="storage"><strong>Correo de bienvenida:</strong> ${storage.resendConfigured ? "clave configurada" : "falta la clave"} · ${storage.welcomeStatus ? `${storage.welcomeStatus.accepted ? "Resend aceptó el último envío" : "último intento fallido"} (HTTP ${Number(storage.welcomeStatus.status) || 0}, ${escapeHtml(formatDate(storage.welcomeStatus.at))})` : "sin intentos registrados desde esta actualización"}</div>
       <div class="card"><table><thead><tr><th>Fecha</th><th>Nombre</th><th>Correo</th><th>Teléfono</th></tr></thead><tbody>${rows}</tbody></table></div>
       <p class="privacy">Información privada de Vida Modo Ohm. No compartas esta dirección ni tus datos de acceso.</p>
     </main>
