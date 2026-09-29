@@ -13,11 +13,11 @@ const PRIVATE_HEADERS = {
 };
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/interesadas") {
-      return handleLead(request, env, url);
+      return handleLead(request, env, url, ctx);
     }
 
     if (url.pathname === "/interesadas" || url.pathname === "/interesadas/") {
@@ -49,7 +49,7 @@ export default {
   },
 };
 
-async function handleLead(request, env, url) {
+async function handleLead(request, env, url, ctx) {
   if (request.method !== "POST") {
     return json({ ok: false, error: "Método no permitido" }, 405, { Allow: "POST" });
   }
@@ -94,7 +94,56 @@ async function handleLead(request, env, url) {
     }
   }
 
+  if (env.RESEND_API_KEY) {
+    ctx.waitUntil(sendWelcomeEmail(env.RESEND_API_KEY, email));
+  } else {
+    console.error("RESEND_API_KEY no está configurada; registro guardado sin correo de bienvenida");
+  }
+
   return json({ ok: true, backupSaved }, 201);
+}
+
+async function sendWelcomeEmail(apiKey, recipient) {
+  const text = `Gracias por formar parte de Vida Modo Ohm, un espacio creado para parar, respirar y volver a ti.
+
+Aquí encontrarás herramientas, recursos y pequeños momentos pensados para acompañarte en tu bienestar interior.
+
+También queremos que conozcas Vibrando en Positivo, nuestra comunidad gratuita de WhatsApp, un espacio donde compartimos prácticas, reflexiones y contenido para seguir caminando juntas.
+
+Dentro de Vida Modo Ohm también encontrarás Refugio de Paz: tu espacio de bienestar interior, nuestra membresía de acompañamiento con prácticas, encuentros y herramientas para ayudarte a dedicarte tiempo, escucharte y volver a ti.
+
+Puedes acceder a todo desde nuestra página web.
+
+🌿 ENTRAR EN VIDA MODO OHM
+https://vidamodoohm.es`;
+
+  const html = `<!doctype html>
+<html lang="es"><body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#333333">
+<div style="max-width:620px;margin:0 auto;padding:36px 24px;line-height:1.65;font-size:16px">
+<p>Gracias por formar parte de Vida Modo Ohm, un espacio creado para parar, respirar y volver a ti.</p>
+<p>Aquí encontrarás herramientas, recursos y pequeños momentos pensados para acompañarte en tu bienestar interior.</p>
+<p>También queremos que conozcas Vibrando en Positivo, nuestra comunidad gratuita de WhatsApp, un espacio donde compartimos prácticas, reflexiones y contenido para seguir caminando juntas.</p>
+<p>Dentro de Vida Modo Ohm también encontrarás Refugio de Paz: tu espacio de bienestar interior, nuestra membresía de acompañamiento con prácticas, encuentros y herramientas para ayudarte a dedicarte tiempo, escucharte y volver a ti.</p>
+<p>Puedes acceder a todo desde nuestra página web.</p>
+<p style="margin-top:30px;text-align:center"><a href="https://vidamodoohm.es" style="display:inline-block;padding:14px 22px;border-radius:8px;background:#7f9d87;color:#ffffff;text-decoration:none;font-weight:700">🌿 ENTRAR EN VIDA MODO OHM</a></p>
+</div></body></html>`;
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "Vida Modo Ohm <hola@vidamodoohm.es>",
+        to: [recipient],
+        subject: "Bienvenida a Vida Modo Ohm 🌿",
+        html,
+        text,
+      }),
+    });
+    if (!response.ok) console.error("Correo de bienvenida rechazado por Resend", response.status);
+  } catch (error) {
+    console.error("No se pudo enviar el correo de bienvenida", error);
+  }
 }
 
 function clean(value, maxLength) {
