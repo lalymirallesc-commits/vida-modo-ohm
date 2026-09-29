@@ -27,7 +27,7 @@ export default {
       const backupLeads = env.INTERESADAS_BACKUP ? await readLeads(env.INTERESADAS_BACKUP) : [];
       const leads = mergeLeads(primaryLeads, backupLeads);
       const welcomeStatus = await env.INTERESADAS.get("welcome:last", "json");
-      return new Response(renderDashboard(leads, { primaryCount: primaryLeads.length, backupCount: backupLeads.length, backupConfigured: Boolean(env.INTERESADAS_BACKUP), welcomeStatus, resendConfigured: Boolean(env.RESEND_API_KEY) }), { headers: PRIVATE_HEADERS });
+      return new Response(renderDashboard(leads, { primaryCount: primaryLeads.length, backupCount: backupLeads.length, backupConfigured: Boolean(env.INTERESADAS_BACKUP), welcomeStatus, resendConfigured: Boolean(env.RESEND_API_KEY || env.RESEN_API_KEY) }), { headers: PRIVATE_HEADERS });
     }
 
     if (url.pathname === "/interesadas.csv") {
@@ -99,13 +99,14 @@ async function handleLead(request, env, url, ctx) {
     }
   }
 
-  if (env.RESEND_API_KEY && !welcomeSent) {
-    ctx.waitUntil(sendWelcomeEmail(env.RESEND_API_KEY, email, name).then(async (result) => {
+  const resendKey = env.RESEND_API_KEY || env.RESEN_API_KEY;
+  if (resendKey && !welcomeSent) {
+    ctx.waitUntil(sendWelcomeEmail(resendKey, email, name).then(async (result) => {
       const at = new Date().toISOString();
       await env.INTERESADAS.put("welcome:last", JSON.stringify({ at, ...result }));
       if (result.accepted) await env.INTERESADAS.put(welcomeKey, at);
     }));
-  } else if (!env.RESEND_API_KEY && !welcomeSent) {
+  } else if (!resendKey && !welcomeSent) {
     console.error("RESEND_API_KEY no está configurada; registro guardado sin correo de bienvenida");
   }
 
