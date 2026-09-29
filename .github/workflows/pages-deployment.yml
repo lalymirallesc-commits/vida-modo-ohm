@@ -25,17 +25,3 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=vida-modo-ohm-prueba --branch=main
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-      - name: Comprobar la ruta de registro publicada
-        run: |
-          for url in https://vida-modo-ohm-prueba.pages.dev/api/interesadas https://vidamodoohm.es/api/interesadas; do
-            curl --location --silent --show-error --output /dev/null --write-out '%{url_effective} -> HTTP %{http_code}\n' "$url"
-          done
-      - name: Verificar nombres de secretos de producción
-        env:
-          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer $CF_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/pages/projects/vida-modo-ohm-prueba" \
-            | jq -r '"Production branch: \(.result.production_branch)", "Latest environment: \(.result.latest_deployment.environment)", "Production variables:", (.result.deployment_configs.production.env_vars | keys[]), "Preview variables:", (.result.deployment_configs.preview.env_vars // {} | keys[])'
