@@ -108,6 +108,9 @@ async function handleLead(request, env, url, ctx) {
 }
 
 async function sendWelcomeEmail(apiKey, recipient, name) {
+  // Resend deduplicates concurrent form submissions even while KV is propagating.
+  const recipientHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(recipient));
+  const idempotencyKey = `vmo-welcome-v1/${Array.from(new Uint8Array(recipientHash), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
   const text = `Hola, ${name}:
 
 Gracias por formar parte de Vida Modo Ohm, un espacio creado para parar, respirar y volver a ti.
@@ -138,7 +141,11 @@ https://vidamodoohm.es`;
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
       body: JSON.stringify({
         from: "Vida Modo Ohm <hola@vidamodoohm.es>",
         to: [recipient],
