@@ -38,4 +38,4 @@ jobs:
           curl --fail --silent --show-error \
             -H "Authorization: Bearer $CF_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/pages/projects/vida-modo-ohm-prueba" \
-            | jq -r '.result.deployment_configs.production.env_vars | keys[]'
+            | jq -r '"Production branch: \(.result.production_branch)", "Latest environment: \(.result.latest_deployment.environment)", "Production variables:", (.result.deployment_configs.production.env_vars | keys[]), "Preview variables:", (.result.deployment_configs.preview.env_vars | keys[])'
