@@ -25,3 +25,8 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=vida-modo-ohm-prueba --branch=main
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Comprobar la ruta de registro publicada
+        run: |
+          for url in https://vida-modo-ohm-prueba.pages.dev/api/interesadas https://vidamodoohm.es/api/interesadas; do
+            curl --location --silent --show-error --output /dev/null --write-out '%{url_effective} -> HTTP %{http_code}\n' "$url"
+          done
