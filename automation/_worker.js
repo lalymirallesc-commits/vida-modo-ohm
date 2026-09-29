@@ -78,9 +78,9 @@ async function handleLead(request, env, url, ctx) {
     return json({ ok: false, error: "Revisa el nombre, el correo y el consentimiento" }, 400);
   }
 
-  // A second submission must not trigger another welcome message.
-  const existingLeads = await readLeads(env.INTERESADAS);
-  const alreadyRegistered = existingLeads.some((lead) => clean(lead.email, 180).toLowerCase() === email);
+  // A welcome can be retried after a previous delivery attempt failed.
+  const welcomeKey = `welcome:${email}`;
+  const welcomeSent = await env.INTERESADAS.get(welcomeKey);
 
   const createdAt = new Date().toISOString();
   const record = { name, email, phone, consent: true, createdAt };
@@ -98,9 +98,11 @@ async function handleLead(request, env, url, ctx) {
     }
   }
 
-  if (env.RESEND_API_KEY && !alreadyRegistered) {
-    ctx.waitUntil(sendWelcomeEmail(env.RESEND_API_KEY, email, name));
-  } else if (!env.RESEND_API_KEY && !alreadyRegistered) {
+  if (env.RESEND_API_KEY && !welcomeSent) {
+    ctx.waitUntil(sendWelcomeEmail(env.RESEND_API_KEY, email, name).then(async (accepted) => {
+      if (accepted) await env.INTERESADAS.put(welcomeKey, new Date().toISOString());
+    }));
+  } else if (!env.RESEND_API_KEY && !welcomeSent) {
     console.error("RESEND_API_KEY no está configurada; registro guardado sin correo de bienvenida");
   }
 
@@ -154,9 +156,14 @@ https://vidamodoohm.es`;
         text,
       }),
     });
-    if (!response.ok) console.error("Correo de bienvenida rechazado por Resend", response.status, (await response.text()).slice(0, 500));
+    if (!response.ok) {
+      console.error("Correo de bienvenida rechazado por Resend", response.status, (await response.text()).slice(0, 500));
+      return false;
+    }
+    return true;
   } catch (error) {
     console.error("No se pudo enviar el correo de bienvenida", error);
+    return false;
   }
 }
 
