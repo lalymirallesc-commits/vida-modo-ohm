@@ -99,7 +99,7 @@ async function handleLead(request, env, url, ctx) {
   }
 
   if (env.RESEND_API_KEY && !alreadyRegistered) {
-    ctx.waitUntil(sendWelcomeEmail(env.RESEND_API_KEY, email));
+    ctx.waitUntil(sendWelcomeEmail(env.RESEND_API_KEY, email, name));
   } else if (!env.RESEND_API_KEY && !alreadyRegistered) {
     console.error("RESEND_API_KEY no está configurada; registro guardado sin correo de bienvenida");
   }
@@ -107,8 +107,10 @@ async function handleLead(request, env, url, ctx) {
   return json({ ok: true, backupSaved }, 201);
 }
 
-async function sendWelcomeEmail(apiKey, recipient) {
-  const text = `Gracias por formar parte de Vida Modo Ohm, un espacio creado para parar, respirar y volver a ti.
+async function sendWelcomeEmail(apiKey, recipient, name) {
+  const text = `Hola, ${name}:
+
+Gracias por formar parte de Vida Modo Ohm, un espacio creado para parar, respirar y volver a ti.
 
 Aquí encontrarás herramientas, recursos y pequeños momentos pensados para acompañarte en tu bienestar interior.
 
@@ -124,6 +126,7 @@ https://vidamodoohm.es`;
   const html = `<!doctype html>
 <html lang="es"><body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#333333">
 <div style="max-width:620px;margin:0 auto;padding:36px 24px;line-height:1.65;font-size:16px">
+<p>Hola, ${escapeHtml(name)}:</p>
 <p>Gracias por formar parte de Vida Modo Ohm, un espacio creado para parar, respirar y volver a ti.</p>
 <p>Aquí encontrarás herramientas, recursos y pequeños momentos pensados para acompañarte en tu bienestar interior.</p>
 <p>También queremos que conozcas Vibrando en Positivo, nuestra comunidad gratuita de WhatsApp, un espacio donde compartimos prácticas, reflexiones y contenido para seguir caminando juntas.</p>
