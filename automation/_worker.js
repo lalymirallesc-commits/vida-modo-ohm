@@ -78,6 +78,10 @@ async function handleLead(request, env, url, ctx) {
     return json({ ok: false, error: "Revisa el nombre, el correo y el consentimiento" }, 400);
   }
 
+  // A second submission must not trigger another welcome message.
+  const existingLeads = await readLeads(env.INTERESADAS);
+  const alreadyRegistered = existingLeads.some((lead) => clean(lead.email, 180).toLowerCase() === email);
+
   const createdAt = new Date().toISOString();
   const record = { name, email, phone, consent: true, createdAt };
   const key = `lead:${createdAt}:${crypto.randomUUID()}`;
@@ -94,9 +98,9 @@ async function handleLead(request, env, url, ctx) {
     }
   }
 
-  if (env.RESEND_API_KEY) {
+  if (env.RESEND_API_KEY && !alreadyRegistered) {
     ctx.waitUntil(sendWelcomeEmail(env.RESEND_API_KEY, email));
-  } else {
+  } else if (!env.RESEND_API_KEY && !alreadyRegistered) {
     console.error("RESEND_API_KEY no está configurada; registro guardado sin correo de bienvenida");
   }
 
