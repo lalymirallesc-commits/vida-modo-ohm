@@ -154,7 +154,7 @@ https://vidamodoohm.es`;
         text,
       }),
     });
-    if (!response.ok) console.error("Correo de bienvenida rechazado por Resend", response.status);
+    if (!response.ok) console.error("Correo de bienvenida rechazado por Resend", response.status, (await response.text()).slice(0, 500));
   } catch (error) {
     console.error("No se pudo enviar el correo de bienvenida", error);
   }
