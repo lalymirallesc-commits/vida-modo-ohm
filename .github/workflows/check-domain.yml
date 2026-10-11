@@ -63,6 +63,14 @@ jobs:
           d=api(base+"/domains")
           for v in d.get("result") or []:
               print("AFTER_DOMAIN",v.get("name"),v.get("status"),"validation",v.get("validation_data",{}).get("status"),"error",v.get("validation_data",{}).get("error_message"))
+          pending=[v for v in d.get("result") or [] if v.get("name")=="www.vidamodoohm.es" and v.get("status")!="active"]
+          if pending:
+              req=urllib.request.Request(root+base+"/domains/www.vidamodoohm.es",data=b"{}",headers={"Authorization":"Bearer "+os.environ["CF_TOKEN"],"Content-Type":"application/json"},method="PATCH")
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as r: refreshed=json.load(r)
+                  v=refreshed.get("result") or {}
+                  print("VALIDATION_RETRY",refreshed.get("success"),v.get("status"),"validation",v.get("validation_data",{}).get("status"),"error",v.get("validation_data",{}).get("error_message"))
+              except urllib.error.HTTPError as e: print("VALIDATION_RETRY_FAILED",e.code)
           vars=(project.get("deployment_configs",{}).get("production") or {}).get("env_vars") or {}
           pwd=(vars.get("ADMIN_PASSWORD") or {}).get("value")
           usr=(vars.get("ADMIN_USER") or {}).get("value") or "laly"
