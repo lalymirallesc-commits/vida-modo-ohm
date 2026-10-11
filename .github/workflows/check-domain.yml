@@ -16,7 +16,7 @@ jobs:
           CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           python - <<'PY'
-          import os,json,urllib.request,urllib.error
+          import os,json,urllib.request,urllib.error,socket,base64
           root="https://api.cloudflare.com/client/v4"
           def api(path):
               req=urllib.request.Request(root+path,headers={"Authorization":"Bearer "+os.environ["CF_TOKEN"]})
@@ -57,4 +57,22 @@ jobs:
                   print("WWW_ASSOCIATION",added.get("success"),(added.get("result") or {}).get("status"))
               except urllib.error.HTTPError as e:
                   print("WWW_ASSOCIATION_FAILED",e.code)
+          for host in ("vidamodoohm.es","www.vidamodoohm.es"):
+              try: print("PUBLIC_DNS",host,sorted(set(x[4][0] for x in socket.getaddrinfo(host,443))))
+              except Exception: print("PUBLIC_DNS_UNAVAILABLE",host)
+          d=api(base+"/domains")
+          for v in d.get("result") or []:
+              print("AFTER_DOMAIN",v.get("name"),v.get("status"),"validation",v.get("validation_data",{}).get("status"),"error",v.get("validation_data",{}).get("error_message"))
+          vars=(project.get("deployment_configs",{}).get("production") or {}).get("env_vars") or {}
+          pwd=(vars.get("ADMIN_PASSWORD") or {}).get("value")
+          usr=(vars.get("ADMIN_USER") or {}).get("value") or "laly"
+          print("AUTH_CHECK_AVAILABLE",bool(pwd))
+          if pwd and pwd!="*****":
+              for host in ("vidamodoohm.es","vida-modo-ohm-prueba.pages.dev"):
+                  req=urllib.request.Request("https://"+host+"/interesadas",headers={"Authorization":"Basic "+base64.b64encode((usr+":"+pwd).encode()).decode()})
+                  try:
+                      with urllib.request.urlopen(req,timeout=20) as r:
+                          r.read()
+                          print("PRIVATE_DASHBOARD",host,r.status)
+                  except urllib.error.HTTPError as e: print("PRIVATE_DASHBOARD",host,e.code)
           PY
