@@ -30,8 +30,8 @@ jobs:
           project=p.get("result") or {}
           print("PROJECT_DOMAINS",project.get("domains"))
           for mode,config in project.get("deployment_configs",{}).items():
-              print("CONFIG",mode,"bindings",sorted(config.get("env_vars",{})),"kv",sorted(config.get("kv_namespaces",{})))
-              for binding,ns in config.get("kv_namespaces",{}).items():
+              print("CONFIG",mode,"bindings",sorted(config.get("env_vars") or {}),"kv",sorted(config.get("kv_namespaces") or {}))
+              for binding,ns in (config.get("kv_namespaces") or {}).items():
                   if binding in ("INTERESADAS","INTERESADAS_BACKUP"):
                       ident=ns.get("namespace_id") if isinstance(ns,dict) else ns
                       res=api("/accounts/"+os.environ["CF_ACCOUNT"]+"/storage/kv/namespaces/"+ident+"/keys?limit=1000")
@@ -50,4 +50,11 @@ jobs:
                   for rec in records.get("result") or []:
                       if rec.get("type") in ("A","AAAA","CNAME"):
                           print("RECORD",rec.get("type"),rec.get("name"),rec.get("content"),"proxied",rec.get("proxied"))
+          if d.get("success") and "vidamodoohm.es" in [v.get("name") for v in d.get("result") or []] and "www.vidamodoohm.es" not in [v.get("name") for v in d.get("result") or []]:
+              req=urllib.request.Request(root+base+"/domains",data=json.dumps({"name":"www.vidamodoohm.es"}).encode(),headers={"Authorization":"Bearer "+os.environ["CF_TOKEN"],"Content-Type":"application/json"},method="POST")
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as r: added=json.load(r)
+                  print("WWW_ASSOCIATION",added.get("success"),(added.get("result") or {}).get("status"))
+              except urllib.error.HTTPError as e:
+                  print("WWW_ASSOCIATION_FAILED",e.code)
           PY
