@@ -108,9 +108,13 @@ async function handleLead(request, env, url, ctx) {
     }));
   } else if (!resendKey && !welcomeSent) {
     console.error("RESEND_API_KEY no está configurada; registro guardado sin correo de bienvenida");
+    await env.INTERESADAS.put("welcome:last", JSON.stringify({
+      at: new Date().toISOString(), accepted: false, status: 0,
+      detail: "Falta configurar RESEND_API_KEY en Cloudflare Pages",
+    }));
   }
 
-  return json({ ok: true, backupSaved }, 201);
+  return json({ ok: true, backupSaved, welcomeQueued: Boolean(resendKey && !welcomeSent) }, 201);
 }
 
 async function sendWelcomeEmail(apiKey, recipient, name) {
