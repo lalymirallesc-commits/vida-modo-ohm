@@ -114,9 +114,9 @@ async function handleLead(request, env, url, ctx) {
 }
 
 async function sendWelcomeEmail(apiKey, recipient, name) {
-  // Resend deduplicates concurrent form submissions even while KV is propagating.
-  const recipientHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(recipient));
-  const idempotencyKey = `vmo-welcome-v1/${Array.from(new Uint8Array(recipientHash), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  // Each retry must be a new delivery attempt. The successful-send marker in KV
+  // prevents later registrations from receiving duplicate welcome emails.
+  const idempotencyKey = `vmo-welcome-v2/${crypto.randomUUID()}`;
   const text = `Hola, ${name}:
 
 Gracias por formar parte de Vida Modo Ohm, un espacio creado para parar, respirar y volver a ti.
