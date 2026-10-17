@@ -20,12 +20,16 @@ export default {
       return Response.redirect(new URL("/regalo/Mi_primer_encuentro_contigo_CORREGIDO.pdf", url.origin), 302);
     }
 
+    if (url.pathname === "/interesadas/login") {
+      return handleAdminLogin(request, env, url);
+    }
+
     if (url.pathname === "/api/interesadas") {
       return handleLead(request, env, url, ctx);
     }
 
     if (url.pathname === "/interesadas" || url.pathname === "/interesadas/") {
-      if (!isAuthorized(request, env)) return unauthorized();
+      if (!(await isAuthorized(request, env))) return adminLoginPage(env);
       if (!env.INTERESADAS) return configurationError("Falta conectar el registro privado.");
       const primaryLeads = await readLeads(env.INTERESADAS);
       const backupLeads = env.INTERESADAS_BACKUP ? await readLeads(env.INTERESADAS_BACKUP) : [];
@@ -35,7 +39,7 @@ export default {
     }
 
     if (url.pathname === "/interesadas.csv") {
-      if (!isAuthorized(request, env)) return unauthorized();
+      if (!(await isAuthorized(request, env))) return adminLoginPage(env);
       if (!env.INTERESADAS) return configurationError("Falta conectar el registro privado.");
       const primaryLeads = await readLeads(env.INTERESADAS);
       const backupLeads = env.INTERESADAS_BACKUP ? await readLeads(env.INTERESADAS_BACKUP) : [];
@@ -206,11 +210,12 @@ function json(body, status = 200, extraHeaders = {}) {
   });
 }
 
-function isAuthorized(request, env) {
+async function isAuthorized(request, env) {
   const expectedUser = env.ADMIN_USER || "laly";
   const expectedPassword = env.ADMIN_PASSWORD || "";
   if (!expectedPassword) return false;
 
+  if (await verifyAdminSession(request, env)) return true;
   const header = request.headers.get("authorization") || "";
   if (!header.startsWith("Basic ")) return false;
 
@@ -237,14 +242,56 @@ function safeEqual(a, b) {
   return difference === 0;
 }
 
-function unauthorized() {
-  return new Response("Acceso privado de Vida Modo Ohm", {
-    status: 401,
-    headers: {
-      "www-authenticate": 'Basic realm="Zona privada Vida Modo Ohm", charset="UTF-8"',
-      ...PRIVATE_HEADERS,
-    },
-  });
+const ADMIN_SESSION_MS = 60 * 60 * 1000;
+
+function adminLoginPage(env, error = "", status = 200) {
+  const body = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Acceso a interesadas · Vida Modo Ohm</title>
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#fbfaf7;color:#263d2c;font:16px Arial,sans-serif;padding:24px}main{width:100%;max-width:430px;padding:32px;background:white;border:1px solid #dfe5dc;border-radius:20px}h1{font:36px Georgia,serif;margin:12px 0}p{line-height:1.5}label{display:block;margin-top:20px}input,button{width:100%;padding:14px;margin-top:8px;border:1px solid #819174;border-radius:8px;font:inherit}button{background:#263d2c;color:white;margin-top:24px;cursor:pointer}.error{color:#9a2525}</style></head>
+<body><main><p>VIDA MODO OHM · ACCESO PRIVADO</p><h1>Lista de interesadas</h1><p>Entra con tu usuario y contraseña habituales.</p>
+${error ? `<p class="error" role="alert">${escapeHtml(error)}</p>` : ""}
+<form method="post" action="/interesadas/login">
+<label>Usuario<input name="username" autocomplete="username" required value="${escapeHtml(env.ADMIN_USER || "laly")}"></label>
+<label>Contraseña<input name="password" type="password" autocomplete="current-password" required></label>
+<button type="submit">Entrar en la lista</button></form><p>La sesión se cierra automáticamente después de una hora.</p></main></body></html>`;
+  return new Response(body, { status, headers: PRIVATE_HEADERS });
+}
+
+async function adminSessionKey(env) {
+  return crypto.subtle.importKey("raw", new TextEncoder().encode((env.ADMIN_USER || "laly") + "\\0" + env.ADMIN_PASSWORD),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
+}
+
+async function handleAdminLogin(request, env, url) {
+  if (request.method !== "POST") return new Response("Método no permitido", { status: 405, headers: { ...PRIVATE_HEADERS, Allow: "POST" } });
+  if (request.headers.get("origin") !== url.origin) return new Response("Origen no permitido", { status: 403, headers: PRIVATE_HEADERS });
+  if (!env.ADMIN_PASSWORD) return configurationError("Falta configurar el acceso privado.");
+  let form;
+  try { form = await request.formData(); } catch { return adminLoginPage(env, "Revisa el usuario y la contraseña.", 400); }
+  if (!safeEqual(String(form.get("username") || ""), env.ADMIN_USER || "laly") ||
+      !safeEqual(String(form.get("password") || ""), env.ADMIN_PASSWORD)) {
+    return adminLoginPage(env, "El usuario o la contraseña no son correctos.", 401);
+  }
+  const payload = String(Date.now() + ADMIN_SESSION_MS) + "." + crypto.randomUUID();
+  const signature = await crypto.subtle.sign("HMAC", await adminSessionKey(env), new TextEncoder().encode(payload));
+  const hex = Array.from(new Uint8Array(signature), n => n.toString(16).padStart(2, "0")).join("");
+  return new Response(null, { status: 303, headers: { ...PRIVATE_HEADERS,
+    Location: "/interesadas",
+    "Set-Cookie": "vmo_admin=" + payload + "." + hex + "; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=3600" } });
+}
+
+async function verifyAdminSession(request, env) {
+  const match = (request.headers.get("cookie") || "").match(/(?:^|;\\s*)vmo_admin=([^;]+)/);
+  if (!match) return false;
+  const [expires, nonce, signature, extra] = match[1].split(".");
+  const expiry = Number(expires);
+  if (extra !== undefined || !Number.isFinite(expiry) || expiry <= Date.now() ||
+      expiry > Date.now() + ADMIN_SESSION_MS || !/^[a-f0-9-]{36}$/.test(nonce || "") ||
+      !/^[a-f0-9]{64}$/.test(signature || "")) return false;
+  try {
+    const bytes = Uint8Array.from(signature.match(/../g), pair => parseInt(pair, 16));
+    return await crypto.subtle.verify("HMAC", await adminSessionKey(env), bytes, new TextEncoder().encode(expires + "." + nonce));
+  } catch { return false; }
 }
 
 function configurationError(message) {
