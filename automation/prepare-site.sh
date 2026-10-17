@@ -4,6 +4,7 @@ set -euo pipefail
 out="${1:-dist}"
 mkdir -p "$out"
 cp automation/index.html automation/_worker.js "$out/"
+cp -R automation/regalo "$out/"
 
 # Source edits come from GitHub; unchanged assets are pinned to this snapshot.
 while IFS= read -r path; do
