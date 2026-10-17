@@ -43,3 +43,32 @@ jobs:
                 print('CONFIG',k,'vars',list((cfg.get('env_vars') or {}).keys()),'kv',list((cfg.get('kv_namespaces') or {}).keys()))
           except Exception as e:print('CLOUDFLARE_ERROR',type(e).__name__,str(e)[:160])
           PY
+
+      - name: Revisar estado del último intento de bienvenida sin datos personales
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          python - <<'PY'
+          import os,json,urllib.request,urllib.parse,urllib.error
+          base='https://api.cloudflare.com/client/v4/accounts/'+os.environ['CF_ACCOUNT']
+          headers={'Authorization':'Bearer '+os.environ['CF_TOKEN']}
+          def get(url):
+            with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=30) as f:return f.read()
+          try:
+            p=json.loads(get(base+'/pages/projects/vida-modo-ohm-prueba'))
+            cfg=(p.get('result') or {}).get('deployment_configs',{}).get('production',{})
+            print('PRODUCTION_KEYS',list((cfg.get('env_vars') or {}).keys()))
+            kv=(cfg.get('kv_namespaces') or {}).get('INTERESADAS')
+            ns=kv.get('namespace_id') if isinstance(kv,dict) else kv
+            if not ns:print('STORAGE_MISSING');quit()
+            b=base+'/storage/kv/namespaces/'+ns
+            keys=json.loads(get(b+'/keys?limit=1000'))
+            k=[x['name'] for x in keys.get('result') or []]
+            print('LEAD_TOTAL_PAGE',sum(x.startswith('lead:') for x in k),'WELCOME_MARKERS',sum(x.startswith('welcome:') for x in k))
+            if 'welcome:last' in k:
+              raw=get(b+'/values/welcome%3Alast');j=json.loads(raw)
+              print('LAST_WELCOME_STATUS',j)
+            else:print('NO_WELCOME_STATUS')
+          except Exception as e:print('DIAGNOSTIC_ERROR',type(e).__name__,str(e)[:200])
+          PY
