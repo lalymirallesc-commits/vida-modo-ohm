@@ -38,7 +38,7 @@ jobs:
           assert recipient and '@' in recipient and 'noreply' not in recipient
           print('::add-mask::'+recipient)
           payload=json.dumps({'name':'Laly','email':recipient,'consent':True}).encode()
-          request=urllib.request.Request('https://vidamodoohm.es/api/interesadas',data=payload,headers={'Content-Type':'application/json','Origin':'https://vidamodoohm.es'},method='POST')
+          request=urllib.request.Request('https://vidamodoohm.es/api/interesadas',data=payload,headers={'Content-Type':'application/json','Origin':'https://vidamodoohm.es','User-Agent':'VMOWelcomeVerification/1.0','Accept':'application/json'},method='POST')
           try:
               response=urllib.request.urlopen(request,timeout=25)
           except urllib.error.HTTPError as e:
