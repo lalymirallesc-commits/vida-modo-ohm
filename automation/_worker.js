@@ -16,6 +16,15 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    if (url.pathname === "/regalo" || url.pathname === "/regalo/" || url.pathname === "/regalo/index.html") {
+      const target = new URL("/regalo/index.html", url.origin);
+      const response = await env.ASSETS.fetch(new Request(target.toString(), request));
+      return new Response(response.body, {
+        status: response.status,
+        headers: { ...Object.fromEntries(response.headers), "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+      });
+    }
+
     if (url.pathname === "/api/interesadas") {
       return handleLead(request, env, url, ctx);
     }
