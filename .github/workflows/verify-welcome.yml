@@ -1,0 +1,49 @@
+name: Verificar bienvenida autorizada
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-welcome.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Esperar publicación y comprobar inscripción autorizada
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          base = 'https://api.github.com/repos/lalymirallesc-commits/vida-modo-ohm'
+          headers = {'Authorization': 'Bearer '+os.environ['GH_TOKEN'], 'Accept':'application/vnd.github+json'}
+          def get(path):
+              with urllib.request.urlopen(urllib.request.Request(base+path, headers=headers),timeout=20) as r:
+                  return json.load(r)
+          for attempt in range(30):
+              runs=get('/actions/runs?head_sha=df80d410f779226a6c1ab5e65bd149caa9fd77c8')['workflow_runs']
+              deploy=[r for r in runs if r['path']=='.github/workflows/pages-deployment.yml']
+              if deploy and deploy[0]['status']=='completed':
+                  assert deploy[0]['conclusion']=='success', 'La publicación no terminó correctamente'
+                  break
+              time.sleep(5)
+          else:
+              raise RuntimeError('La publicación sigue pendiente')
+          # Recipient is the account owner's address already present on this immutable
+          # public commit. The owner authorized one signup test in this conversation.
+          commit=get('/commits/94a375f7fbab4e447f0d74829e673080272f84e6')
+          assert commit['author']['login']=='lalymirallesc-commits'
+          recipient=commit['commit']['author']['email']
+          assert recipient and '@' in recipient and 'noreply' not in recipient
+          print('::add-mask::'+recipient)
+          payload=json.dumps({'name':'Laly','email':recipient,'consent':True}).encode()
+          request=urllib.request.Request('https://vidamodoohm.es/api/interesadas',data=payload,headers={'Content-Type':'application/json','Origin':'https://vidamodoohm.es'},method='POST')
+          with urllib.request.urlopen(request,timeout=25) as r:
+              result=json.load(r)
+              print('SIGNUP_HTTP',r.status)
+              print('SIGNUP_SAVED',result.get('ok'))
+              print('WELCOME_ACCEPTED',result.get('welcomeQueued'))
+              assert r.status==201 and result.get('ok'), 'No se guardó el registro'
+              assert result.get('welcomeQueued'), 'No se confirmó el envío de bienvenida'
+          PY
