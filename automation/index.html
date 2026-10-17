@@ -617,28 +617,6 @@
         </div>
       </footer>
     </main>
-    <script>
-    (function () {
-      const gift = "/regalo/Mi_primer_encuentro_contigo_CORREGIDO.pdf";
-      function showGiftAfterSignup() {
-        const target = document.querySelector(".community-welcome");
-        if (!target || target.querySelector(".welcome-gift-link")) return;
-        const p = document.createElement("p");
-        p.className = "welcome-gift-link";
-        p.style.cssText = "margin-top:18px;text-align:center";
-        const a = document.createElement("a");
-        a.href = gift;
-        a.textContent = "🎁 Abrir mi e-book de regalo (PDF)";
-        a.style.cssText = "display:inline-block;background:#7f9d87;color:white;text-decoration:none;padding:14px 20px;border-radius:8px;font-weight:700";
-        p.appendChild(a);
-        target.appendChild(p);
-      }
-      const observer = new MutationObserver(showGiftAfterSignup);
-      observer.observe(document.documentElement,{childList:true,subtree:true});
-      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", showGiftAfterSignup);
-      else showGiftAfterSignup();
-    })();
-    </script>
     <script id="_R_">
       import("/assets/index-B13OwEIC.js");
     </script>
