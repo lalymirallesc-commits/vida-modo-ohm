@@ -86,6 +86,9 @@ async function handleLead(request, env, url, ctx) {
   // A welcome can be retried after a previous delivery attempt failed.
   const welcomeKey = `welcome:${email}`;
   const welcomeSent = await env.INTERESADAS.get(welcomeKey);
+  // A prior subscriber may request the same welcome gift again, but limit to once per day.
+  const previousSentAt = Date.parse(welcomeSent || "");
+  const canSendWelcome = !welcomeSent || (Number.isFinite(previousSentAt) && Date.now() - previousSentAt >= 86400000);
 
   const createdAt = new Date().toISOString();
   const record = { name, email, phone, consent: true, createdAt };
@@ -104,13 +107,13 @@ async function handleLead(request, env, url, ctx) {
   }
 
   const resendKey = env.RESEND_API_KEY || env.RESEN_API_KEY;
-  if (resendKey && !welcomeSent) {
+  if (resendKey && canSendWelcome) {
     ctx.waitUntil(sendWelcomeEmail(resendKey, email, name).then(async (result) => {
       const at = new Date().toISOString();
       await env.INTERESADAS.put("welcome:last", JSON.stringify({ at, ...result }));
       if (result.accepted) await env.INTERESADAS.put(welcomeKey, at);
     }));
-  } else if (!resendKey && !welcomeSent) {
+  } else if (!resendKey && canSendWelcome) {
     console.error("RESEND_API_KEY no está configurada; registro guardado sin correo de bienvenida");
     await env.INTERESADAS.put("welcome:last", JSON.stringify({
       at: new Date().toISOString(), accepted: false, status: 0,
@@ -118,7 +121,7 @@ async function handleLead(request, env, url, ctx) {
     }));
   }
 
-  return json({ ok: true, backupSaved, welcomeQueued: Boolean(resendKey && !welcomeSent) }, 201);
+  return json({ ok: true, backupSaved, welcomeQueued: Boolean(resendKey && canSendWelcome) }, 201);
 }
 
 async function sendWelcomeEmail(apiKey, recipient, name) {
