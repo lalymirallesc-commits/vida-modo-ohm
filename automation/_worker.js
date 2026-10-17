@@ -127,6 +127,11 @@ Gracias por formar parte de Vida Modo Ohm, un espacio creado para parar, respira
 
 Aquí encontrarás herramientas, recursos y pequeños momentos pensados para acompañarte en tu bienestar interior.
 
+Como regalo de bienvenida, hemos preparado «Mi primer encuentro contigo», un mini e-book con el método RAIN para hacer una pausa y escucharte.
+
+🎁 ABRIR MI REGALO
+https://vidamodoohm.es/regalo/
+
 También queremos que conozcas Vibrando en Positivo, nuestra comunidad gratuita de WhatsApp, un espacio donde compartimos prácticas, reflexiones y contenido para seguir caminando juntas.
 
 Dentro de Vida Modo Ohm también encontrarás Refugio de Paz: tu espacio de bienestar interior, nuestra membresía de acompañamiento con prácticas, encuentros y herramientas para ayudarte a dedicarte tiempo, escucharte y volver a ti.
@@ -142,6 +147,8 @@ https://vidamodoohm.es`;
 <p>Hola, ${escapeHtml(name)}:</p>
 <p>Gracias por formar parte de Vida Modo Ohm, un espacio creado para parar, respirar y volver a ti.</p>
 <p>Aquí encontrarás herramientas, recursos y pequeños momentos pensados para acompañarte en tu bienestar interior.</p>
+<p>Como regalo de bienvenida, hemos preparado <strong>«Mi primer encuentro contigo»</strong>, un mini e-book con el método RAIN para hacer una pausa y escucharte.</p>
+<p style="margin-top:26px;margin-bottom:26px;text-align:center"><a href="https://vidamodoohm.es/regalo/" style="display:inline-block;padding:14px 22px;border-radius:8px;background:#7f9d87;color:#ffffff;text-decoration:none;font-weight:700">🎁 ABRIR MI REGALO</a></p>
 <p>También queremos que conozcas Vibrando en Positivo, nuestra comunidad gratuita de WhatsApp, un espacio donde compartimos prácticas, reflexiones y contenido para seguir caminando juntas.</p>
 <p>Dentro de Vida Modo Ohm también encontrarás Refugio de Paz: tu espacio de bienestar interior, nuestra membresía de acompañamiento con prácticas, encuentros y herramientas para ayudarte a dedicarte tiempo, escucharte y volver a ti.</p>
 <p>Puedes acceder a todo desde nuestra página web.</p>
