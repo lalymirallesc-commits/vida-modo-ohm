@@ -5,6 +5,8 @@ out="${1:-dist}"
 mkdir -p "$out"
 cp automation/index.html automation/_worker.js "$out/"
 cp -R automation/regalo "$out/"
+python automation/regalo/make_pdf.py "$out/regalo/Mi_primer_encuentro_contigo_CORREGIDO.pdf"
+
 
 # Source edits come from GitHub; unchanged assets are pinned to this snapshot.
 while IFS= read -r path; do
