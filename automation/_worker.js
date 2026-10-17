@@ -254,7 +254,7 @@ ${error ? `<p class="error" role="alert">${escapeHtml(error)}</p>` : ""}
 <label>Usuario<input name="username" autocomplete="username" required value="${escapeHtml(env.ADMIN_USER || "laly")}"></label>
 <label>Contraseña<input name="password" type="password" autocomplete="current-password" required></label>
 <button type="submit">Entrar en la lista</button></form><p>La sesión se cierra automáticamente después de una hora.</p></main></body></html>`;
-  return new Response(body, { status, headers: PRIVATE_HEADERS });
+  return new Response(body, { status, headers: { ...PRIVATE_HEADERS, "referrer-policy": "same-origin" } });
 }
 
 async function adminSessionKey(env) {
@@ -281,7 +281,7 @@ async function handleAdminLogin(request, env, url) {
 }
 
 async function verifyAdminSession(request, env) {
-  const match = (request.headers.get("cookie") || "").match(/(?:^|;\\s*)vmo_admin=([^;]+)/);
+  const match = (request.headers.get("cookie") || "").match(/(?:^|;\s*)vmo_admin=([^;]+)/);
   if (!match) return false;
   const [expires, nonce, signature, extra] = match[1].split(".");
   const expiry = Number(expires);
