@@ -16,6 +16,11 @@ jobs:
       deployments: write
     steps:
       - uses: actions/checkout@v4
+      - name: Preparar fuentes y PDF
+        run: |
+          python -m pip install --quiet reportlab
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-lato fonts-liberation
       - name: Preparar la web actual
         run: bash automation/prepare-site.sh dist
       - name: Publicar en el proyecto actual
