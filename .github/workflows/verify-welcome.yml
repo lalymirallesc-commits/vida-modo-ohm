@@ -15,7 +15,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python - <<'PY'
-          import json, os, time, urllib.request
+          import json, os, time, urllib.request, urllib.error
           base = 'https://api.github.com/repos/lalymirallesc-commits/vida-modo-ohm'
           headers = {'Authorization': 'Bearer '+os.environ['GH_TOKEN'], 'Accept':'application/vnd.github+json'}
           def get(path):
@@ -39,7 +39,13 @@ jobs:
           print('::add-mask::'+recipient)
           payload=json.dumps({'name':'Laly','email':recipient,'consent':True}).encode()
           request=urllib.request.Request('https://vidamodoohm.es/api/interesadas',data=payload,headers={'Content-Type':'application/json','Origin':'https://vidamodoohm.es'},method='POST')
-          with urllib.request.urlopen(request,timeout=25) as r:
+          try:
+              response=urllib.request.urlopen(request,timeout=25)
+          except urllib.error.HTTPError as e:
+              print('SIGNUP_REJECTED',e.code,'TYPE',e.headers.get('Content-Type'),'MITIGATED',e.headers.get('cf-mitigated'))
+              print('ERROR_DETAIL',e.read(500).decode('utf-8','replace'))
+              raise
+          with response as r:
               result=json.load(r)
               print('SIGNUP_HTTP',r.status)
               print('SIGNUP_SAVED',result.get('ok'))
