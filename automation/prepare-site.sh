@@ -17,9 +17,12 @@ while IFS= read -r path; do
 done < automation/asset-paths.txt
 
 cp automation/cofre-hydro-active-vmo-20261104.jpg "$out/cofre-hydro-active-vmo-20261104.jpg"
+# Keep the previously published URL working for browsers with cached HTML.
+cp automation/cofre-hydro-active-vmo-20261104.jpg "$out/cofre-hydro-active-vmo.jpeg"
 
 (cd "$out" && sha256sum -c ../automation/asset-checksums.txt)
 test -s "$out/index.html"
 test -s "$out/_worker.js"
 test -s "$out/calendario-adviento-dr-grandel.jpeg"
 test -s "$out/cofre-hydro-active-vmo-20261104.jpg"
+test -s "$out/cofre-hydro-active-vmo.jpeg"
