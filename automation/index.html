@@ -316,6 +316,10 @@
           ></a>
         </div>
       </section>
+      <div class="product-transition" style="max-width:1200px;margin:0 auto;padding:2rem 1.5rem 1rem;text-align:center">
+        <p class="section-kicker">CUIDARTE POR DENTRO Y POR FUERA TAMBIÉN IMPORTA</p>
+        <p style="max-width:700px;margin:0 auto;line-height:1.65">Con Camino hacia ti acompañamos tu bienestar interior; aquí también tienes un momento para cuidar tu piel.</p>
+      </div>
       <section
         class="featured-product"
         id="cofre-hydro-active"
@@ -332,10 +336,6 @@
           />
         </div>
         <div class="featured-product-copy">
-          <div class="wellbeing-bridge">
-            <p class="section-kicker">CUIDARTE POR DENTRO Y POR FUERA TAMBIÉN IMPORTA</p>
-            <p>Con Camino hacia ti acompañamos tu bienestar interior; aquí también tienes un momento para cuidar tu piel.</p>
-          </div>
           <p class="section-kicker">EDICIÓN LIMITADA · 5 UNIDADES</p>
           <h2>
             <span>Cofre Hydro Active</span>
@@ -710,12 +710,13 @@
   const patchPage = () => {
     const advent = document.querySelector('#navidad');
     if (!advent) return;
-    const hydroCopy = document.querySelector('#cofre-hydro-active .featured-product-copy');
-    if (hydroCopy && !hydroCopy.querySelector('.wellbeing-bridge')) {
-      const bridge = document.createElement('div');
-      bridge.className = 'wellbeing-bridge';
-      bridge.innerHTML = '<p class="section-kicker">CUIDARTE POR DENTRO Y POR FUERA TAMBIÉN IMPORTA</p><p>Con Camino hacia ti acompañamos tu bienestar interior; aquí también tienes un momento para cuidar tu piel.</p>';
-      hydroCopy.prepend(bridge);
+    const hydro = document.querySelector('#cofre-hydro-active');
+    if (hydro && !document.querySelector('.product-transition')) {
+      const transition = document.createElement('div');
+      transition.className = 'product-transition';
+      transition.style.cssText = 'max-width:1200px;margin:0 auto;padding:2rem 1.5rem 1rem;text-align:center';
+      transition.innerHTML = '<p class="section-kicker">CUIDARTE POR DENTRO Y POR FUERA TAMBIÉN IMPORTA</p><p style="max-width:700px;margin:0 auto;line-height:1.65">Con Camino hacia ti acompañamos tu bienestar interior; aquí también tienes un momento para cuidar tu piel.</p>';
+      hydro.before(transition);
     }
     if (!document.querySelector('#cofre-timeless')) {
       const template = document.createElement('template');
