@@ -332,8 +332,10 @@
           />
         </div>
         <div class="featured-product-copy">
-          <p class="section-kicker">CUIDARTE POR DENTRO Y POR FUERA TAMBIÉN IMPORTA</p>
-          <p>Además de nuestros recursos digitales para tu bienestar interior, también puedes regalarte un momento para cuidar tu piel.</p>
+          <div class="wellbeing-bridge">
+            <p class="section-kicker">CUIDARTE POR DENTRO Y POR FUERA TAMBIÉN IMPORTA</p>
+            <p>Además de nuestros recursos digitales para tu bienestar interior, también puedes regalarte un momento para cuidar tu piel.</p>
+          </div>
           <p class="section-kicker">EDICIÓN LIMITADA · 5 UNIDADES</p>
           <h2>
             <span>Cofre Hydro Active</span>
@@ -708,6 +710,13 @@
   const patchPage = () => {
     const advent = document.querySelector('#navidad');
     if (!advent) return;
+    const hydroCopy = document.querySelector('#cofre-hydro-active .featured-product-copy');
+    if (hydroCopy && !hydroCopy.querySelector('.wellbeing-bridge')) {
+      const bridge = document.createElement('div');
+      bridge.className = 'wellbeing-bridge';
+      bridge.innerHTML = '<p class="section-kicker">CUIDARTE POR DENTRO Y POR FUERA TAMBIÉN IMPORTA</p><p>Además de nuestros recursos digitales para tu bienestar interior, también puedes regalarte un momento para cuidar tu piel.</p>';
+      hydroCopy.prepend(bridge);
+    }
     if (!document.querySelector('#cofre-timeless')) {
       const template = document.createElement('template');
       template.innerHTML = timelessMarkup;
