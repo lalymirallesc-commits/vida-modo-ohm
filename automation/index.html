@@ -700,7 +700,26 @@
         }
       })();
     </script>
-  </body>
+  <script>
+(() => {
+  const timelessMarkup = "<section class=\"featured-product\" id=\"cofre-timeless\" aria-label=\"Cofre Timeless de Dr. Grandel\"><div class=\"featured-product-visual\"><img src=\"cofre-timeless-vmo-20261107.jpeg\" alt=\"Cofre Timeless de Dr. Grandel con crema facial y contorno de ojos de regalo\" width=\"1051\" height=\"1280\" loading=\"lazy\" decoding=\"async\" /></div><div class=\"featured-product-copy\"><p class=\"section-kicker\">EDICIÓN ESPECIAL · REGALO INCLUIDO</p><h2><span>Cofre Timeless</span><em>Crema facial + contorno de ojos de regalo</em></h2><p>Un cuidado facial avanzado de <strong>Dr. Grandel</strong> para ayudar a reafirmar, alisar y devolver luminosidad a tu piel.</p><ul><li>Mejora la firmeza y la elasticidad</li><li>Suaviza arrugas y líneas de expresión</li><li>Aporta luminosidad y mejora la textura</li><li>Ayuda a definir el óvalo facial</li></ul><p class=\"featured-product-price\">120 €</p><a class=\"button dark\" href=\"https://payhip.com/b/7EdzN\" target=\"_blank\" rel=\"noopener noreferrer external\">Comprar ahora</a><p class=\"featured-product-note\">Compra online · contorno de ojos de regalo</p></div></section>";
+  const patchPage = () => {
+    const advent = document.querySelector('#navidad');
+    if (!advent) return;
+    if (!document.querySelector('#cofre-timeless')) {
+      const template = document.createElement('template');
+      template.innerHTML = timelessMarkup;
+      advent.before(template.content.firstElementChild);
+    }
+    const price = document.querySelector('#navidad .advent-price');
+    if (price && price.textContent.trim() !== '110 €') price.textContent = '110 €';
+  };
+  const observer = new MutationObserver(patchPage);
+  observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  patchPage();
+})();
+</script>
+</body>
   <!-- Mirrored from https://vidamodoohm.es/ by HTTrack Website Copier/3.x [XR&CO], Mon, 14 Sep 2026 21:46:52 GMT -->
 </html>
 <script>
